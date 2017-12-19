@@ -1,5 +1,5 @@
 -- auto-generated definition
-CREATE TABLE dishes
+CREATE TABLE IF NOT EXISTS dishes
 (
   id    SERIAL NOT NULL
     CONSTRAINT dishes_pkey
