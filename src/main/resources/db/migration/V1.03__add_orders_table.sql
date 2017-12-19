@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS orders
   amount    INTEGER,
   client_id INTEGER
     CONSTRAINT orders_customers__fk
-    REFERENCES customers,
+    REFERENCES customers (id),
   dish_id   INTEGER
     CONSTRAINT orders_dishes__fk
-    REFERENCES dishes
+    REFERENCES dishes (id)
 );
 
 CREATE UNIQUE INDEX orders_id_uindex
