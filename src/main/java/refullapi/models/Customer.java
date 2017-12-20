@@ -2,14 +2,25 @@ package refullapi.models;
 
 import lombok.Getter;
 
+import javax.persistence.*;
+import java.io.Serializable;
+
 @Getter
-public class XD {
+@Entity
+@Table(name = "customers", schema = "public", catalog = "canteen__database")
+public class Customer implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     private String name;
     private String surname;
     private String email;
 
-    private XD(CustomerBuilder builder) {
+    public Customer( ) {}
+
+    private Customer(CustomerBuilder builder) {
         this.id = builder.id;
         this.name = builder.name;
         this.surname = builder.surname;
@@ -48,8 +59,8 @@ public class XD {
             return this;
         }
 
-        public XD build() {
-            return new XD(this);
+        public Customer build() {
+            return new Customer(this);
         }
     }
 }
