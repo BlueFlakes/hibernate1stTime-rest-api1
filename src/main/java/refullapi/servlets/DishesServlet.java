@@ -57,9 +57,7 @@ public class DishesServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
         try {
-            String requestStr = req.getReader().lines().collect(Collectors.joining());
-            Dish dish = mapper.readValue(requestStr, Dish.class);
-            DaoPool.dishDao.saveToDatabase(dish);
+            DaoPool.dishDao.saveToDatabase(getDishFromRequest(req));
             resp.setStatus(201);
             resp.getWriter().write("create");
 
@@ -74,9 +72,7 @@ public class DishesServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            String requestStr = req.getReader().lines().collect(Collectors.joining());
-            Dish dish = mapper.readValue(requestStr, Dish.class);
-            DaoPool.dishDao.remove(dish);
+            DaoPool.dishDao.remove(getDishFromRequest(req));
             resp.setStatus(201);
             resp.getWriter().write("remove");
 
@@ -91,9 +87,7 @@ public class DishesServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            String requestStr = req.getReader().lines().collect(Collectors.joining());
-            Dish dish = mapper.readValue(requestStr, Dish.class);
-            DaoPool.dishDao.update(dish);
+            DaoPool.dishDao.update(getDishFromRequest(req));
             resp.setStatus(201);
             resp.getWriter().write("update");
 
@@ -103,5 +97,10 @@ public class DishesServlet extends HttpServlet {
         } catch (IOException e) {
             resp.setStatus(400);
         }
+    }
+
+    private Dish getDishFromRequest(HttpServletRequest req) throws IOException {
+        String requestStr = req.getReader().lines().collect(Collectors.joining());
+        return mapper.readValue(requestStr, Dish.class);
     }
 }
