@@ -2,12 +2,14 @@ package refullapi.servlets;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import refullapi.hibernate.DaoPool;
 import refullapi.models.Customer;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 public class CustomersServlet extends HttpServlet {
@@ -46,5 +48,21 @@ public class CustomersServlet extends HttpServlet {
         Integer id = Integer.parseInt(path.split("/")[2]);
         Customer customer = DaoPool.customerDao.get(Customer.class, id);
         return mapper.writeValueAsString(customer);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+
+        try {
+            DaoPool.customerDao.saveToDatabase(getCustomerFromRequest(req));
+            resp.setStatus(201);
+            resp.getWriter().write("create");
+
+        } catch (InvalidFormatException e) {
+            resp.setStatus(406);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
+        }
     }
 }
