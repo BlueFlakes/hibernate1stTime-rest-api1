@@ -13,11 +13,11 @@ public class Order {
     private Integer id;
     private Integer amount;
 
-    @Column(name="client_id")
-    private Integer clientId;
+    @OneToOne
+    private Customer clientId;
 
-    @Column(name="dish_id")
-    private Integer dishId;
+    @OneToOne
+    private Dish dishId;
 
     public Order() {}
 
@@ -35,8 +35,8 @@ public class Order {
     public static class OrderBuilder {
         private Integer id;
         private Integer amount;
-        private Integer clientId;
-        private Integer dishId;
+        private Customer clientId;
+        private Dish dishId;
 
         private OrderBuilder() {}
 
@@ -50,12 +50,12 @@ public class Order {
             return this;
         }
 
-        public OrderBuilder clientId(Integer clientId) {
+        public OrderBuilder clientId(Customer clientId) {
             this.clientId = clientId;
             return this;
         }
 
-        public OrderBuilder dishId(Integer dishId) {
+        public OrderBuilder dishId(Dish dishId) {
             this.dishId = dishId;
             return this;
         }
