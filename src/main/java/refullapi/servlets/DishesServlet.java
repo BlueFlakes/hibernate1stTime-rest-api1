@@ -87,9 +87,21 @@ public class DishesServlet extends HttpServlet {
             resp.setStatus(400);
         }
     }
-//
-//    @Override
-//    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-//
-//    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            String requestStr = req.getReader().lines().collect(Collectors.joining());
+            Dish dish = mapper.readValue(requestStr, Dish.class);
+            DaoPool.dishDao.update(dish);
+            resp.setStatus(201);
+            resp.getWriter().write("update");
+
+        } catch (InvalidFormatException e) {
+            resp.setStatus(406);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
+        }
+    }
 }
