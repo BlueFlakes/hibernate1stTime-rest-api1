@@ -3,9 +3,8 @@ package refullapi.hibernate;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import refullapi.models.Customer;
 
-public class HibernateUtil {
+class HibernateUtils {
 
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
