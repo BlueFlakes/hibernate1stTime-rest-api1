@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CustomersServlet extends HttpServlet {
 
@@ -95,5 +96,10 @@ public class CustomersServlet extends HttpServlet {
         } catch (IOException e) {
             resp.setStatus(400);
         }
+    }
+
+    private Customer getCustomerFromRequest(HttpServletRequest req) throws IOException {
+        String requestStr = req.getReader().lines().collect(Collectors.joining());
+        return mapper.readValue(requestStr, Customer.class);
     }
 }
