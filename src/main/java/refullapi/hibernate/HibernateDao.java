@@ -10,7 +10,7 @@ import javax.persistence.criteria.Root;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-class HibernateDao<T> {
+public class HibernateDao<T> {
 
     public void remove(T obj) {
         BiConsumer<T, Session> removeObj = (o, session) -> session.remove(o);

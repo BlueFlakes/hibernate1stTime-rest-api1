@@ -31,8 +31,8 @@ public class DBConnection {
             String port = "5432";
             String databaseName = "canteen__database";
 
-            String userLogin = "read_write_access";
-            String userPasswd = "read_write";
+            String userLogin = "postgres";
+            String userPasswd = "postgres";
             String url = String.format("%s://%s:%s/%s", controllerType, address, port, databaseName);
 
             connection = DriverManager.getConnection(url, userLogin, userPasswd);

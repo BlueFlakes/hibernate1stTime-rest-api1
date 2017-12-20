@@ -6,12 +6,12 @@
   <display-name>Archetype Created Web Application</display-name>
 
   <servlet>
-    <servlet-name>DefaultServlet</servlet-name>
-    <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+    <servlet-name>DishServlet</servlet-name>
+    <servlet-class>refullapi.servlets.DishesServlet</servlet-class>
   </servlet>
 
   <servlet-mapping>
-    <servlet-name>DefaultServlet</servlet-name>
-    <url-pattern>/static/*</url-pattern>
+    <servlet-name>DishServlet</servlet-name>
+    <url-pattern>/dishes/*</url-pattern>
   </servlet-mapping>
 </web-app>
