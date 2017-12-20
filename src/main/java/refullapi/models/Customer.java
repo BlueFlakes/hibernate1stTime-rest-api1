@@ -3,12 +3,11 @@ package refullapi.models;
 import lombok.Getter;
 
 import javax.persistence.*;
-import java.io.Serializable;
 
 @Getter
 @Entity
 @Table(name = "customers", schema = "public", catalog = "canteen__database")
-public class Customer implements Serializable {
+public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
