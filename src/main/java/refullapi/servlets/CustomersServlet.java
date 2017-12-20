@@ -65,4 +65,19 @@ public class CustomersServlet extends HttpServlet {
             resp.setStatus(400);
         }
     }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        try {
+            DaoPool.customerDao.remove(getCustomerFromRequest(req));
+            resp.setStatus(201);
+            resp.getWriter().write("remove");
+
+        } catch (InvalidFormatException e) {
+            resp.setStatus(406);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
+        }
+    }
 }
