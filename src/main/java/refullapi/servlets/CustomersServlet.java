@@ -1,10 +1,14 @@
 package refullapi.servlets;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import refullapi.hibernate.DaoPool;
+import refullapi.models.Customer;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 public class CustomersServlet extends HttpServlet {
 
@@ -18,7 +22,7 @@ public class CustomersServlet extends HttpServlet {
         try {
 
             if (path.equals("/customers")) {
-                jsonToString = getJsonStringFromArrayList(mapper);
+                jsonToString = getJsonStringFromList(mapper);
             }
             else {
                 jsonToString = getJsonStringFromObject(mapper, path);
@@ -31,5 +35,16 @@ public class CustomersServlet extends HttpServlet {
         } catch (Exception e) {
             resp.setStatus(404);
         }
+    }
+
+    private String getJsonStringFromList(ObjectMapper mapper) throws JsonProcessingException {
+        List<Customer> customers = DaoPool.customerDao.getAll(Customer.class);
+        return mapper.writeValueAsString(customers);
+    }
+
+    private String getJsonStringFromObject(ObjectMapper mapper, String path) throws JsonProcessingException {
+        Integer id = Integer.parseInt(path.split("/")[2]);
+        Customer customer = DaoPool.customerDao.get(Customer.class, id);
+        return mapper.writeValueAsString(customer);
     }
 }
