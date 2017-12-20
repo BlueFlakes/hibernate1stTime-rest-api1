@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import refullapi.hibernate.DaoPool;
 import refullapi.models.Customer;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -72,6 +73,21 @@ public class CustomersServlet extends HttpServlet {
             DaoPool.customerDao.remove(getCustomerFromRequest(req));
             resp.setStatus(201);
             resp.getWriter().write("remove");
+
+        } catch (InvalidFormatException e) {
+            resp.setStatus(406);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            DaoPool.customerDao.update(getCustomerFromRequest(req));
+            resp.setStatus(201);
+            resp.getWriter().write("update");
 
         } catch (InvalidFormatException e) {
             resp.setStatus(406);
