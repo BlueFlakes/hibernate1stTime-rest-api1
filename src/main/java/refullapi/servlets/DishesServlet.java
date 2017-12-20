@@ -2,7 +2,7 @@ package refullapi.servlets;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import refullapi.dao.DishDao;
+import refullapi.hibernate.DaoPool;
 import refullapi.models.Dish;
 
 import javax.servlet.ServletException;
@@ -10,11 +10,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 public class DishesServlet extends HttpServlet {
-
-    private DishDao dishDao = new DishDao();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -26,8 +24,8 @@ public class DishesServlet extends HttpServlet {
 
             if (path.equals("/dishes")) {
                 jsonToString = getJsonStringFromArrayList(mapper);
-
-            } else {
+            }
+            else {
                 jsonToString = getJsonStringFromObject(mapper, path);
             }
 
@@ -41,35 +39,35 @@ public class DishesServlet extends HttpServlet {
     }
 
     private String getJsonStringFromArrayList(ObjectMapper mapper) throws JsonProcessingException {
-        ArrayList<Dish> dishes = dishDao.getAll();
+        List<Dish> dishes = DaoPool.dishDao.getAll(Dish.class);
         return mapper.writeValueAsString(dishes);
     }
 
     private String getJsonStringFromObject(ObjectMapper mapper, String path) throws JsonProcessingException {
         Integer id = Integer.parseInt(path.split("/")[2]);
-        Dish dish = dishDao.getDish(id);
+        Dish dish = DaoPool.dishDao.get(Dish.class, id);
         return mapper.writeValueAsString(dish);
     }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String name = req.getParameter("name");
-        Double price = Double.parseDouble(req.getParameter("price"));
-        Dish dish = Dish.builder().name(name)
-                                  .price(price)
-                                  .build();
-        dishDao.insert(dish);
-        resp.setStatus(201);
-        resp.getWriter().write("create");
-    }
-
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-    }
+//
+//    @Override
+//    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+//        String name = req.getParameter("name");
+//        Double price = Double.parseDouble(req.getParameter("price"));
+//        Dish dish = Dish.builder().name(name)
+//                                  .price(price)
+//                                  .build();
+//        dishDao.insert(dish);
+//        resp.setStatus(201);
+//        resp.getWriter().write("create");
+//    }
+//
+//    @Override
+//    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+//
+//    }
+//
+//    @Override
+//    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+//
+//    }
 }
