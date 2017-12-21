@@ -3,9 +3,11 @@ package refullapi.servlets;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.hibernate.StaleStateException;
 import refullapi.hibernate.DaoPool;
 import refullapi.models.Customer;
 
+import javax.persistence.OptimisticLockException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -33,7 +35,8 @@ public class CustomersServlet extends HttpServlet {
             if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equalsIgnoreCase("customers")) {
                 jsonToString = getJsonStringFromList();
             }
-            else if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+
+            else if (dataFromURI.length == RESOURCE_WITH_ID) {
                 jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
 
             } else {
@@ -44,8 +47,14 @@ public class CustomersServlet extends HttpServlet {
             resp.setStatus(200);
             resp.getWriter().write(jsonToString);
 
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
+            resp.setStatus(406);
+
+        } catch (NullPointerException e) {
             resp.setStatus(404);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
         }
     }
 
@@ -54,8 +63,13 @@ public class CustomersServlet extends HttpServlet {
         return mapper.writeValueAsString(customers);
     }
 
-    private String getJsonStringFromObject(Integer id) throws JsonProcessingException {
+    private String getJsonStringFromObject(Integer id) throws JsonProcessingException, NullPointerException {
         Customer customer = DaoPool.customerDao.get(Customer.class, id);
+
+        if (customer == null) {
+            throw new NullPointerException();
+        }
+
         return mapper.writeValueAsString(customer);
     }
 
@@ -80,14 +94,21 @@ public class CustomersServlet extends HttpServlet {
         String[] dataFromURI = parseURItoList(req);
 
         try {
-            if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
                 Integer id = getIdFromURI(dataFromURI);
                 DaoPool.customerDao.remove(DaoPool.customerDao.get(Customer.class, id));
-                resp.setStatus(201);
+                resp.setStatus(200);
                 resp.getWriter().write("remove");
+
+            } else {
+                throw new IndexOutOfBoundsException();
             }
 
-        } catch (InvalidFormatException e) {
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
@@ -100,20 +121,30 @@ public class CustomersServlet extends HttpServlet {
         String[] dataFromURI = parseURItoList(req);
 
         try {
-            if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
                 Integer id = getIdFromURI(dataFromURI);
                 Customer customer = getCustomerFromRequest(req);
                 customer.setId(id);
                 DaoPool.customerDao.update(customer);
                 resp.setStatus(201);
                 resp.getWriter().write("update");
+
+            } else {
+                throw new IndexOutOfBoundsException();
             }
 
-        } catch (InvalidFormatException e) {
+        } catch (OptimisticLockException | StaleStateException e) {
+                resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
             resp.setStatus(400);
+
+        } catch (NullPointerException e) {
+            resp.setStatus(404);
+
         }
     }
 
@@ -128,17 +159,6 @@ public class CustomersServlet extends HttpServlet {
         String relativePath = path.substring(1, pathLength);
 
         return  relativePath.split("/");
-    }
-
-    private boolean isIndex(String[] dataFromURI) {
-        try {
-            getIdFromURI(dataFromURI);
-
-            return true;
-
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 
     private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
