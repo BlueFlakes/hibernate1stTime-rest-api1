@@ -3,9 +3,11 @@ package refullapi.servlets;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.hibernate.StaleStateException;
 import refullapi.hibernate.DaoPool;
 import refullapi.models.Order;
 
+import javax.persistence.OptimisticLockException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -15,24 +17,36 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class OrdersServlet extends HttpServlet {
-
     private ObjectMapper mapper = new ObjectMapper();
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         String path = req.getRequestURI().substring(req.getContextPath().length());
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
         String jsonToString;
 
         try {
-            if (path.equalsIgnoreCase("/orders")) {
+            if (dataFromURI.length == ServletsCommon.RESOURCE
+                    && dataFromURI[ServletsCommon.RESOURCE_INDEX].equalsIgnoreCase("orders")) {
                 jsonToString = getJsonStringFromArrayList(mapper);
             }
-            else {
+            else if ((dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID)) {
                 jsonToString = getJsonStringFromObject(mapper, path);
+            } else {
+                throw new IndexOutOfBoundsException();
             }
 
             resp.setContentType("application/json");
             resp.setStatus(200);
             resp.getWriter().write(jsonToString);
+
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
+            resp.setStatus(406);
+
+        } catch (NullPointerException e) {
+            resp.setStatus(404);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
 
         } catch (Exception e) {
             resp.setStatus(404);
@@ -68,12 +82,23 @@ public class OrdersServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            DaoPool.orderDao.remove(getOrderFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("remove");
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID) {
+                Integer id = ServletsCommon.getIdFromURI(dataFromURI);
+                DaoPool.orderDao.remove(DaoPool.orderDao.get(Order.class, id));
+                resp.setStatus(200);
+                resp.getWriter().write("remove");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
@@ -83,16 +108,33 @@ public class OrdersServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            DaoPool.orderDao.update(getOrderFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("update");
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID) {
+                Integer id = ServletsCommon.getIdFromURI(dataFromURI);
+                Order order = getOrderFromRequest(req);
+                order.setId(id);
+                DaoPool.orderDao.update(order);
+                resp.setStatus(201);
+                resp.getWriter().write("update");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
             resp.setStatus(400);
+
+        } catch (NullPointerException e) {
+            resp.setStatus(404);
+
         }
     }
 
