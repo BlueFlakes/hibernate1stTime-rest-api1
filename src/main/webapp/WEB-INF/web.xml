@@ -8,14 +8,27 @@
     <servlet-name>DishServlet</servlet-name>
     <servlet-class>refullapi.servlets.DishesServlet</servlet-class>
   </servlet>
+
+  <servlet>
+    <servlet-name>CustomerServlet</servlet-name>
+    <servlet-class>refullapi.servlets.CustomersServlet</servlet-class>
+  </servlet>
+
   <servlet>
     <servlet-name>OrdersServlet</servlet-name>
     <servlet-class>refullapi.servlets.OrdersServlet</servlet-class>
   </servlet>
+
   <servlet-mapping>
     <servlet-name>DishServlet</servlet-name>
     <url-pattern>/dishes/*</url-pattern>
   </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>CustomerServlet</servlet-name>
+    <url-pattern>/customers/*</url-pattern>
+  </servlet-mapping>
+
   <servlet-mapping>
     <servlet-name>OrdersServlet</servlet-name>
     <url-pattern>/orders/*</url-pattern>
