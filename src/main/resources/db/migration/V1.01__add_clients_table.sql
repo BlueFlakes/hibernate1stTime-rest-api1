@@ -1,4 +1,4 @@
-CREATE TABLE customers
+CREATE TABLE IF NOT EXISTS customers
 (
   id      SERIAL NOT NULL
     CONSTRAINT customers_pkey
