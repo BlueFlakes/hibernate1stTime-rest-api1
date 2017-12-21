@@ -1,11 +1,13 @@
 package refullapi.models;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 
 @Getter
 @Entity
+@Setter
 @Table(name = "orders", schema = "public", catalog = "canteen__database")
 public class Order {
     @Id
