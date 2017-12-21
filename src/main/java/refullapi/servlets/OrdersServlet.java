@@ -20,17 +20,16 @@ public class OrdersServlet extends HttpServlet {
     private ObjectMapper mapper = new ObjectMapper();
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String path = req.getRequestURI().substring(req.getContextPath().length());
         String[] dataFromURI = ServletsCommon.parseURItoList(req);
         String jsonToString;
 
         try {
             if (dataFromURI.length == ServletsCommon.RESOURCE
                     && dataFromURI[ServletsCommon.RESOURCE_INDEX].equalsIgnoreCase("orders")) {
-                jsonToString = getJsonStringFromArrayList(mapper);
+                jsonToString = getJsonStringFromArrayList();
             }
             else if ((dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID)) {
-                jsonToString = getJsonStringFromObject(mapper, path);
+                jsonToString = getJsonStringFromObject(ServletsCommon.getIdFromURI(dataFromURI));
             } else {
                 throw new IndexOutOfBoundsException();
             }
@@ -53,14 +52,17 @@ public class OrdersServlet extends HttpServlet {
         }
     }
 
-    private String getJsonStringFromArrayList(ObjectMapper mapper) throws JsonProcessingException {
+    private String getJsonStringFromArrayList() throws JsonProcessingException {
         List<Order> orders = DaoPool.orderDao.getAll(Order.class);
         return mapper.writeValueAsString(orders);
     }
 
-    private String getJsonStringFromObject(ObjectMapper mapper, String path) throws JsonProcessingException {
-        Integer id = Integer.parseInt(path.split("/")[2]);
+    private String getJsonStringFromObject(Integer id) throws JsonProcessingException {
         Order order = DaoPool.orderDao.get(Order.class, id);
+
+        if (order == null) {
+            throw new NullPointerException();
+        }
         return mapper.writeValueAsString(order);
     }
 
