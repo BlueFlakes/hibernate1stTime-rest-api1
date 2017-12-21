@@ -16,20 +16,28 @@ import java.util.stream.Collectors;
 
 public class CustomersServlet extends HttpServlet {
 
+    private static final int RESOURCE = 1;
+    private static final int RESOURCE_WITH_ID = 2;
+    private static final int RESOURCE_INDEX = 0;
+    private static final int ID_INDEX = 1;
+
     private ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String path = req.getRequestURI().substring(req.getContextPath().length());
+        String[] dataFromURI = parseURItoList(req);
         String jsonToString;
 
         try {
 
-            if (path.equals("/customers")) {
-                jsonToString = getJsonStringFromList(mapper);
+            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equals("customers")) {
+                jsonToString = getJsonStringFromList();
             }
-            else {
-                jsonToString = getJsonStringFromObject(mapper, path);
+            else if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+                jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
+
+            } else {
+                throw new Exception();
             }
 
             resp.setContentType("application/json");
@@ -41,13 +49,12 @@ public class CustomersServlet extends HttpServlet {
         }
     }
 
-    private String getJsonStringFromList(ObjectMapper mapper) throws JsonProcessingException {
+    private String getJsonStringFromList() throws JsonProcessingException {
         List<Customer> customers = DaoPool.customerDao.getAll(Customer.class);
         return mapper.writeValueAsString(customers);
     }
 
-    private String getJsonStringFromObject(ObjectMapper mapper, String path) throws JsonProcessingException {
-        Integer id = Integer.parseInt(path.split("/")[2]);
+    private String getJsonStringFromObject(Integer id) throws JsonProcessingException {
         Customer customer = DaoPool.customerDao.get(Customer.class, id);
         return mapper.writeValueAsString(customer);
     }
@@ -101,5 +108,28 @@ public class CustomersServlet extends HttpServlet {
     private Customer getCustomerFromRequest(HttpServletRequest req) throws IOException {
         String requestStr = req.getReader().lines().collect(Collectors.joining());
         return mapper.readValue(requestStr, Customer.class);
+    }
+
+    private String[] parseURItoList(HttpServletRequest req) {
+        String path = req.getRequestURI();
+        Integer pathLength = path.length();
+        String relativePath = path.substring(1, pathLength);
+
+        return  relativePath.split("/");
+    }
+
+    private boolean isIndex(String[] dataFromURI) {
+        try {
+            getIdFromURI(dataFromURI);
+
+            return true;
+
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
+        return Integer.parseInt(dataFromURI[ID_INDEX]);
     }
 }
