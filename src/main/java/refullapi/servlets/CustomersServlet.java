@@ -30,14 +30,14 @@ public class CustomersServlet extends HttpServlet {
 
         try {
 
-            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equals("customers")) {
+            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equalsIgnoreCase("customers")) {
                 jsonToString = getJsonStringFromList();
             }
             else if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
                 jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
 
             } else {
-                throw new Exception();
+                throw new IndexOutOfBoundsException();
             }
 
             resp.setContentType("application/json");
@@ -77,10 +77,15 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        String[] dataFromURI = parseURItoList(req);
+
         try {
-            DaoPool.customerDao.remove(getCustomerFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("remove");
+            if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+                Integer id = getIdFromURI(dataFromURI);
+                DaoPool.customerDao.remove(DaoPool.customerDao.get(Customer.class, id));
+                resp.setStatus(201);
+                resp.getWriter().write("remove");
+            }
 
         } catch (InvalidFormatException e) {
             resp.setStatus(406);
@@ -92,10 +97,17 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String[] dataFromURI = parseURItoList(req);
+
         try {
-            DaoPool.customerDao.update(getCustomerFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("update");
+            if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+                Integer id = getIdFromURI(dataFromURI);
+                Customer customer = getCustomerFromRequest(req);
+                customer.setId(id);
+                DaoPool.customerDao.update(customer);
+                resp.setStatus(201);
+                resp.getWriter().write("update");
+            }
 
         } catch (InvalidFormatException e) {
             resp.setStatus(406);
@@ -132,4 +144,6 @@ public class CustomersServlet extends HttpServlet {
     private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
         return Integer.parseInt(dataFromURI[ID_INDEX]);
     }
+
+
 }
