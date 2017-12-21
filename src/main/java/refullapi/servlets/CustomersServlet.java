@@ -3,9 +3,11 @@ package refullapi.servlets;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.hibernate.StaleStateException;
 import refullapi.hibernate.DaoPool;
 import refullapi.models.Customer;
 
+import javax.persistence.OptimisticLockException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -30,22 +32,29 @@ public class CustomersServlet extends HttpServlet {
 
         try {
 
-            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equals("customers")) {
+            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equalsIgnoreCase("customers")) {
                 jsonToString = getJsonStringFromList();
             }
-            else if (dataFromURI.length == RESOURCE_WITH_ID && isIndex(dataFromURI)) {
+
+            else if (dataFromURI.length == RESOURCE_WITH_ID) {
                 jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
 
             } else {
-                throw new Exception();
+                throw new IndexOutOfBoundsException();
             }
 
             resp.setContentType("application/json");
             resp.setStatus(200);
             resp.getWriter().write(jsonToString);
 
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
+            resp.setStatus(406);
+
+        } catch (NullPointerException e) {
             resp.setStatus(404);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
         }
     }
 
@@ -54,8 +63,13 @@ public class CustomersServlet extends HttpServlet {
         return mapper.writeValueAsString(customers);
     }
 
-    private String getJsonStringFromObject(Integer id) throws JsonProcessingException {
+    private String getJsonStringFromObject(Integer id) throws JsonProcessingException, NullPointerException {
         Customer customer = DaoPool.customerDao.get(Customer.class, id);
+
+        if (customer == null) {
+            throw new NullPointerException();
+        }
+
         return mapper.writeValueAsString(customer);
     }
 
@@ -77,12 +91,24 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            DaoPool.customerDao.remove(getCustomerFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("remove");
+        String[] dataFromURI = parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
+                Integer id = getIdFromURI(dataFromURI);
+                DaoPool.customerDao.remove(DaoPool.customerDao.get(Customer.class, id));
+                resp.setStatus(200);
+                resp.getWriter().write("remove");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
@@ -92,16 +118,33 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            DaoPool.customerDao.update(getCustomerFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("update");
+        String[] dataFromURI = parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
+                Integer id = getIdFromURI(dataFromURI);
+                Customer customer = getCustomerFromRequest(req);
+                customer.setId(id);
+                DaoPool.customerDao.update(customer);
+                resp.setStatus(201);
+                resp.getWriter().write("update");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+        } catch (OptimisticLockException | StaleStateException e) {
+                resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
             resp.setStatus(400);
+
+        } catch (NullPointerException e) {
+            resp.setStatus(404);
+
         }
     }
 
@@ -118,18 +161,9 @@ public class CustomersServlet extends HttpServlet {
         return  relativePath.split("/");
     }
 
-    private boolean isIndex(String[] dataFromURI) {
-        try {
-            getIdFromURI(dataFromURI);
-
-            return true;
-
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
     private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
         return Integer.parseInt(dataFromURI[ID_INDEX]);
     }
+
+
 }
