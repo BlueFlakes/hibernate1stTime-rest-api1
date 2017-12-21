@@ -13,7 +13,6 @@ public class Dish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
-    @OneToOne
     private Integer id;
 
     private String name;
