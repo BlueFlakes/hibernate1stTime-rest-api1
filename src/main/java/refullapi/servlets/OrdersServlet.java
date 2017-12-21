@@ -68,13 +68,18 @@ public class OrdersServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
 
         try {
-            DaoPool.orderDao.saveToDatabase(getOrderFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("create");
+            if (dataFromURI.length == ServletsCommon.RESOURCE && dataFromURI[ServletsCommon.RESOURCE_INDEX].equalsIgnoreCase("customers")) {
+                DaoPool.orderDao.saveToDatabase(getOrderFromRequest(req));
+                resp.setStatus(201);
+                resp.getWriter().write("create");
+            } else {
+                throw new IllegalArgumentException();
+            }
 
-        } catch (InvalidFormatException e) {
+        } catch (InvalidFormatException | IllegalArgumentException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
