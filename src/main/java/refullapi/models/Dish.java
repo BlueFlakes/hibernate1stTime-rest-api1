@@ -1,10 +1,12 @@
 package refullapi.models;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "dishes", schema = "public", catalog = "canteen__database")
 public class Dish {
