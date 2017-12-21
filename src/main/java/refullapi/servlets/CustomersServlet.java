@@ -18,26 +18,21 @@ import java.util.stream.Collectors;
 
 public class CustomersServlet extends HttpServlet {
 
-    private static final int RESOURCE = 1;
-    private static final int RESOURCE_WITH_ID = 2;
-    private static final int RESOURCE_INDEX = 0;
-    private static final int ID_INDEX = 1;
-
     private ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String[] dataFromURI = parseURItoList(req);
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
         String jsonToString;
 
         try {
 
-            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equalsIgnoreCase("customers")) {
+            if (dataFromURI.length == ServletsCommon.RESOURCE && dataFromURI[ServletsCommon.RESOURCE_INDEX].equalsIgnoreCase("customers")) {
                 jsonToString = getJsonStringFromList();
             }
 
-            else if (dataFromURI.length == RESOURCE_WITH_ID) {
-                jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
+            else if (dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID) {
+                jsonToString = getJsonStringFromObject(ServletsCommon.getIdFromURI(dataFromURI));
 
             } else {
                 throw new IndexOutOfBoundsException();
@@ -91,11 +86,11 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        String[] dataFromURI = parseURItoList(req);
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
 
         try {
-            if (dataFromURI.length == RESOURCE_WITH_ID) {
-                Integer id = getIdFromURI(dataFromURI);
+            if (dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID) {
+                Integer id = ServletsCommon.getIdFromURI(dataFromURI);
                 DaoPool.customerDao.remove(DaoPool.customerDao.get(Customer.class, id));
                 resp.setStatus(200);
                 resp.getWriter().write("remove");
@@ -118,11 +113,11 @@ public class CustomersServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String[] dataFromURI = parseURItoList(req);
+        String[] dataFromURI = ServletsCommon.parseURItoList(req);
 
         try {
-            if (dataFromURI.length == RESOURCE_WITH_ID) {
-                Integer id = getIdFromURI(dataFromURI);
+            if (dataFromURI.length == ServletsCommon.RESOURCE_WITH_ID) {
+                Integer id = ServletsCommon.getIdFromURI(dataFromURI);
                 Customer customer = getCustomerFromRequest(req);
                 customer.setId(id);
                 DaoPool.customerDao.update(customer);
@@ -151,18 +146,5 @@ public class CustomersServlet extends HttpServlet {
         String requestStr = req.getReader().lines().collect(Collectors.joining());
         return mapper.readValue(requestStr, Customer.class);
     }
-
-    private String[] parseURItoList(HttpServletRequest req) {
-        String path = req.getRequestURI();
-        Integer pathLength = path.length();
-        String relativePath = path.substring(1, pathLength);
-
-        return  relativePath.split("/");
-    }
-
-    private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
-        return Integer.parseInt(dataFromURI[ID_INDEX]);
-    }
-
 
 }
