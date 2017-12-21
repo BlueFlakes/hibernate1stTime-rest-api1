@@ -144,7 +144,6 @@ public class CustomersServlet extends HttpServlet {
 
         } catch (NullPointerException e) {
             resp.setStatus(404);
-
         }
     }
 

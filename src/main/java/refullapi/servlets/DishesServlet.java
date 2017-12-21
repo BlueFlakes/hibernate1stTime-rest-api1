@@ -3,9 +3,12 @@ package refullapi.servlets;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.hibernate.StaleStateException;
 import refullapi.hibernate.DaoPool;
+import refullapi.models.Customer;
 import refullapi.models.Dish;
 
+import javax.persistence.OptimisticLockException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,39 +19,57 @@ import java.util.stream.Collectors;
 
 public class DishesServlet extends HttpServlet {
 
+    private static final int RESOURCE = 1;
+    private static final int RESOURCE_WITH_ID = 2;
+    private static final int RESOURCE_INDEX = 0;
+    private static final int ID_INDEX = 1;
+
     private ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String path = req.getRequestURI().substring(req.getContextPath().length());
+        String[] dataFromURI = parseURItoList(req);
         String jsonToString;
 
         try {
 
-            if (path.equals("/dishes")) {
-                jsonToString = getJsonStringFromArrayList(mapper);
+            if (dataFromURI.length == RESOURCE && dataFromURI[RESOURCE_INDEX].equalsIgnoreCase("/dishes")) {
+                jsonToString = getJsonStringFromArrayList();
             }
-            else {
-                jsonToString = getJsonStringFromObject(mapper, path);
+            else if (dataFromURI.length == RESOURCE_WITH_ID) {
+                jsonToString = getJsonStringFromObject(getIdFromURI(dataFromURI));
+
+            } else {
+                throw new IndexOutOfBoundsException();
             }
 
             resp.setContentType("application/json");
             resp.setStatus(200);
             resp.getWriter().write(jsonToString);
 
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
+            resp.setStatus(406);
+
+        } catch (NullPointerException e) {
             resp.setStatus(404);
+
+        } catch (IOException e) {
+            resp.setStatus(400);
         }
     }
 
-    private String getJsonStringFromArrayList(ObjectMapper mapper) throws JsonProcessingException {
+    private String getJsonStringFromArrayList() throws JsonProcessingException {
         List<Dish> dishes = DaoPool.dishDao.getAll(Dish.class);
         return mapper.writeValueAsString(dishes);
     }
 
-    private String getJsonStringFromObject(ObjectMapper mapper, String path) throws JsonProcessingException {
-        Integer id = Integer.parseInt(path.split("/")[2]);
+    private String getJsonStringFromObject(Integer id) throws JsonProcessingException {
         Dish dish = DaoPool.dishDao.get(Dish.class, id);
+
+        if (dish == null) {
+            throw new NullPointerException();
+        }
+
         return mapper.writeValueAsString(dish);
     }
 
@@ -70,12 +91,23 @@ public class DishesServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            DaoPool.dishDao.remove(getDishFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("remove");
+        String[] dataFromURI = parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
+                Integer id = getIdFromURI(dataFromURI);
+                DaoPool.dishDao.remove(DaoPool.dishDao.get(Dish.class, id));
+                resp.setStatus(201);
+                resp.getWriter().write("remove");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
@@ -85,16 +117,32 @@ public class DishesServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            DaoPool.dishDao.update(getDishFromRequest(req));
-            resp.setStatus(201);
-            resp.getWriter().write("update");
+        String[] dataFromURI = parseURItoList(req);
 
-        } catch (InvalidFormatException e) {
+        try {
+            if (dataFromURI.length == RESOURCE_WITH_ID) {
+                Integer id = getIdFromURI(dataFromURI);
+                Dish dish = getDishFromRequest(req);
+                dish.setId(id);
+                DaoPool.dishDao.update(dish);
+                resp.setStatus(201);
+                resp.getWriter().write("update");
+
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+
+        } catch (OptimisticLockException | StaleStateException e) {
+            resp.setStatus(406);
+
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
             resp.setStatus(406);
 
         } catch (IOException e) {
             resp.setStatus(400);
+
+        } catch (NullPointerException e) {
+            resp.setStatus(404);
         }
     }
 
@@ -102,4 +150,17 @@ public class DishesServlet extends HttpServlet {
         String requestStr = req.getReader().lines().collect(Collectors.joining());
         return mapper.readValue(requestStr, Dish.class);
     }
+
+    private String[] parseURItoList(HttpServletRequest req) {
+        String path = req.getRequestURI();
+        Integer pathLength = path.length();
+        String relativePath = path.substring(1, pathLength);
+
+        return  relativePath.split("/");
+    }
+
+    private Integer getIdFromURI(String[] dataFromURI) throws NumberFormatException {
+        return Integer.parseInt(dataFromURI[ID_INDEX]);
+    }
+
 }
